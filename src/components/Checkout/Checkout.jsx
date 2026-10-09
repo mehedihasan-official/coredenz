@@ -1,5 +1,8 @@
-import React, { useContext, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+'use client';
+
+import React, { useContext, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FaLock, FaArrowLeft } from 'react-icons/fa';
 import { HiOutlineLocationMarker } from 'react-icons/hi';
 import { BsCheckCircleFill } from 'react-icons/bs';
@@ -24,19 +27,30 @@ import {
 } from 'lucide-react';
 
 const Checkout = () => {
-  const { cart, user, placeOrder } = useContext(AuthContext);
+  const { user, placeOrder } = useContext(AuthContext);
   const [transactionId, setTransactionId] = useState('');
-  const navigate = useNavigate();
+  const router = useRouter();
+  const [checkout, setCheckout] = useState({
+    cartProducts: [],
+    subtotal: 0,
+    shippingFee: 0,
+    total: 0,
+  });
 
-  const location = useLocation();
-  const {
-    cartProducts = [],
-    subtotal = 0,
-    shippingFee = 0,
-    total = 0,
-  } = location.state || {};
+  useEffect(() => {
+    const storedCheckout = sessionStorage.getItem('coredenz-checkout');
+    if (!storedCheckout) return;
 
-  const { productDetails, productId, quantity } = cartProducts[0] || {};
+    try {
+      setCheckout(JSON.parse(storedCheckout));
+      sessionStorage.removeItem('coredenz-checkout');
+    } catch (error) {
+      console.error('Unable to restore checkout details:', error);
+      sessionStorage.removeItem('coredenz-checkout');
+    }
+  }, []);
+
+  const { cartProducts, subtotal, shippingFee, total } = checkout;
 
   const [shippingInfo, setShippingInfo] = useState({
     firstName: '',
@@ -258,14 +272,14 @@ const Checkout = () => {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  to="/orders"
+                  href="/orders"
                   className="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-[#00B4D8] to-[#040144] text-white rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105"
                 >
                   <Package className="w-5 h-5" />
                   View Order Details
                 </Link>
                 <Link
-                  to="/products"
+                  href="/products"
                   className="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-white border-2 border-gray-200 text-[#040144] rounded-xl font-semibold hover:bg-gray-50 transition-all duration-300"
                 >
                   <ShoppingBag className="w-5 h-5" />
@@ -285,7 +299,7 @@ const Checkout = () => {
       <div className="bg-gradient-to-r from-[#040144] to-[#00B4D8] py-8 px-4">
         <div className="max-w-7xl mx-auto">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => router.back()}
             className="flex items-center gap-2 text-white hover:text-gray-200 mb-4 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />

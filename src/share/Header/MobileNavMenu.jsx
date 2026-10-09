@@ -16,7 +16,7 @@ import {
   FaShoppingCart,
 } from 'react-icons/fa';
 import { FaX } from 'react-icons/fa6';
-import { Link } from 'react-router';
+import Link from 'next/link';
 
 
 const MobileNavMenu = ({ menuOpen, setMenuOpen, navItems, openSubmenu, toggleSubmenu, user, loading, handleLogout }) => {
@@ -58,7 +58,7 @@ const MobileNavMenu = ({ menuOpen, setMenuOpen, navItems, openSubmenu, toggleSub
                     {item.subItems.map(subItem => (
                       <Link
                         key={subItem.name}
-                        to={subItem.href}
+                        href={subItem.href}
                         className="block py-1 text-gray-300 hover:text-blue-400 transition-colors"
                         onClick={() => setMenuOpen(false)}
                       >
@@ -70,7 +70,7 @@ const MobileNavMenu = ({ menuOpen, setMenuOpen, navItems, openSubmenu, toggleSub
               </>
             ) : (
               <Link
-                to={item.href}
+                href={item.href}
                 className="block text-gray-100 hover:text-blue-500 font-medium transition-colors py-2"
                 onClick={() => setMenuOpen(false)}
               >
@@ -98,14 +98,14 @@ const MobileNavMenu = ({ menuOpen, setMenuOpen, navItems, openSubmenu, toggleSub
             ) : (
               <div className="flex flex-col space-y-3">
                 <Link
-                  to="/sign-in"
+                  href="/sign-in"
                   className="text-center text-gray-100 hover:text-blue-500 font-medium transition-colors py-2 border border-gray-300 rounded-md"
                   onClick={() => setMenuOpen(false)}
                 >
                   Sign In
                 </Link>
                 <Link
-                  to="/sign-up"
+                  href="/sign-up"
                   className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-center transition-colors"
                   onClick={() => setMenuOpen(false)}
                 >

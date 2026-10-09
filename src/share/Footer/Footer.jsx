@@ -1,4 +1,6 @@
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaMapMarkerAlt, FaPhone, FaEnvelope, FaClock, FaReact } from 'react-icons/fa';
+import Image from 'next/image';
+import Link from 'next/link';
 import logo from '../../assets/images/CoreDenz-logo.png';
 
 const Footer = () => {
@@ -9,7 +11,13 @@ const Footer = () => {
                 {/* Company Info */}
                 <div className="space-y-4">
                     <div className="flex items-center space-x-2">
-                        <img src={logo} alt="coredenz" className="w-52" />
+                        <Image
+                            src={logo}
+                            alt="CoreDenz"
+                            width={logo.width}
+                            height={logo.height}
+                            className="h-auto w-52"
+                        />
                     </div>
                     <p className="text-gray-400 text-start">
                         Your one-stop shop for the latest and greatest products. Shop with confidence and enjoy fast delivery!
@@ -34,11 +42,11 @@ const Footer = () => {
                 <div className="space-y-4">
                     <h4 className="text-lg font-semibold">Quick Links</h4>
                     <ul className="space-y-2">
-                        <li><a href="/products" className="text-gray-400 hover:text-white transition-colors">Shop</a></li>
-                        <li><a href="/services" className="text-gray-400 hover:text-white transition-colors">Services</a></li>
-                        <li><a href="/about" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
-                        <li><a href="/faq" className="text-gray-400 hover:text-white transition-colors">FAQ</a></li>
+                        <li><Link href="/products" className="text-gray-400 hover:text-white transition-colors">Shop</Link></li>
+                        <li><Link href="/services" className="text-gray-400 hover:text-white transition-colors">Services</Link></li>
+                        <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
+                        <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact</Link></li>
+                        <li><Link href="/orders" className="text-gray-400 hover:text-white transition-colors">Orders</Link></li>
                     </ul>
                 </div>
 
@@ -46,11 +54,9 @@ const Footer = () => {
                 <div className="space-y-4">
                     <h4 className="text-lg font-semibold">Customer Service</h4>
                     <ul className="space-y-2">
-                        <li><a href="/returns" className="text-gray-400 hover:text-white transition-colors">Returns Policy</a></li>
-                        <li><a href="/shipping" className="text-gray-400 hover:text-white transition-colors">Shipping Info</a></li>
-                        <li><a href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</a></li>
-                        
+                        <li><Link href="/orders" className="text-gray-400 hover:text-white transition-colors">Track an Order</Link></li>
+                        <li><Link href="/profile" className="text-gray-400 hover:text-white transition-colors">My Account</Link></li>
+                        <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact Support</Link></li>
                     </ul>
                 </div>
 

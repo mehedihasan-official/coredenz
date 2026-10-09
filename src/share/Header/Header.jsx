@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 
-import { Link, useLocation } from "react-router";
+import { usePathname } from 'next/navigation';
 import { AuthContext } from "../../provider/AuthProvider/AuthProvider";
 import logo from "../../assets/images/CoreDenz-logo.png";
 import { FaX } from "react-icons/fa6";
@@ -41,7 +41,6 @@ const Header = () => {
   const handleLogout = () => {
     //here the logout function
     logOut();
-    console.log("User logged out");
     setMenuOpen(false);
   };
 
@@ -65,8 +64,7 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const location = useLocation();
-  const activePath = location.pathname;
+  const activePath = usePathname();
 
 
   return (

@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import {
   FaBars,
   FaTimes,
@@ -15,7 +16,7 @@ import {
   FaChevronUp,
   FaShoppingCart,
 } from 'react-icons/fa';
-import { Link } from 'react-router';
+import Link from 'next/link';
 import { FaX } from 'react-icons/fa6';
 
 const DesktopHeader = ({
@@ -33,9 +34,16 @@ const DesktopHeader = ({
   return (
     <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 md:py-4">
       {/* Logo */}
-      <Link to="/">
+      <Link href="/">
         <div className="flex items-center space-x-2">
-          <img src={logo} alt="CoreDenz Logo" className="w-32 md:w-52" />
+          <Image
+            src={logo}
+            alt="CoreDenz"
+            width={logo.width}
+            height={logo.height}
+            priority
+            className="h-auto w-32 md:w-52"
+          />
         </div>
       </Link>
 
@@ -73,7 +81,7 @@ const DesktopHeader = ({
                 {item.subItems.map(sub => (
                   <Link
                     key={sub.name}
-                    to={sub.href}
+                    href={sub.href}
                     className={`
                       block px-4 py-2 text-sm transition-colors
                       ${
@@ -91,7 +99,7 @@ const DesktopHeader = ({
           ) : (
             <Link
               key={item.name}
-              to={item.href}
+              href={item.href}
               className={`
                 font-medium transition-all
                 ${
@@ -111,7 +119,7 @@ const DesktopHeader = ({
       <div className="hidden md:flex items-center space-x-10">
         {/* Cart */}
         <Link
-          to="/cart"
+          href="/cart"
           className="relative text-gray-100 hover:text-yellow-400"
         >
           <FaShoppingCart className="text-xl" />
@@ -141,7 +149,7 @@ const DesktopHeader = ({
           <div className="flex items-center space-x-4 ml-2">
             {user ? (
               <div className="flex items-center space-x-4">
-                <Link to="/profile">
+                <Link href="/profile">
                   <img
                     src={user.photoURL}
                     alt={user.name}
@@ -158,13 +166,13 @@ const DesktopHeader = ({
             ) : (
               <>
                 <Link
-                  to="/sign-in"
+                  href="/sign-in"
                   className="text-gray-100 hover:text-blue-500 font-medium"
                 >
                   Sign In
                 </Link>
                 <Link
-                  to="/sign-up"
+                  href="/sign-up"
                   className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
                 >
                   Sign Up
@@ -179,7 +187,7 @@ const DesktopHeader = ({
       <div className="flex items-center space-x-4 md:space-x-6">
         <div>
           <Link
-            to="/cart"
+            href="/cart"
             className="relative md:hidden text-gray-100 hover:text-yellow-400"
           >
             <FaShoppingCart className="text-xl" />

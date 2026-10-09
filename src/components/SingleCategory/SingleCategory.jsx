@@ -1,38 +1,36 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+'use client';
+
+import React, { useContext } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
 import { FaArrowLeft } from 'react-icons/fa';
 import Loading from '../Loading/Loading';
 
 const SingleCategory = () => {
-    const { category } = useParams(); // Get slug like "laptop" or "gadgets"
-    const { products, loading } = useContext(AuthContext);
-    const [filteredProducts, setFilteredProducts] = useState([]);
+    const { category } = useParams();
+    const { products, catalogLoading } = useContext(AuthContext);
+    const normalizedCategory = category?.toLowerCase().trim() || '';
+    const filteredProducts = products.filter(product => {
+        const productCategory = product.category?.toLowerCase().trim();
+        return productCategory === normalizedCategory;
+    });
 
-    useEffect(() => {
-        if (products && category) {
-            const normalizedCategory = category.toLowerCase().trim();
-            const filtered = products.filter(product => {
-                const productCategory = product.category?.toLowerCase().trim();
-                return productCategory === normalizedCategory;
-            });
-            setFilteredProducts(filtered);
-        }
-    }, [products, category]);
-
-    if (loading) {
+    if (catalogLoading) {
         return <Loading />;
     }
 
-    const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
+    const formattedCategory = normalizedCategory
+        ? normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1)
+        : 'Category';
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Category Header */}
             <div className="mb-8">
                 <Link 
-                    to="/" 
+                    href="/" 
                     className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
                 >
                     <FaArrowLeft className="mr-2" /> Back to Home
@@ -62,7 +60,7 @@ const SingleCategory = () => {
                         No products found in the "{formattedCategory}" category.
                     </p>
                     <Link 
-                        to="/" 
+                        href="/" 
                         className="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
                     >
                         Continue Shopping

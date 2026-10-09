@@ -1,31 +1,26 @@
 import React, { useState, useEffect, useCallback } from "react";
 import app from "../../Firebase/firebase.config";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
-  updateProfile,
-} from "firebase/auth";
 import axios from "axios";
 
 export const AuthContext = React.createContext();
 
-const AuthProvider = ({ children }) => {
+const AuthProvider = ({
+  children,
+  initialProducts = [],
+  initialServices = [],
+}) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [catalogLoading, setCatalogLoading] = useState(
+    initialProducts.length === 0
+  );
   const [error, setError] = useState(null);
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(initialProducts);
   const [cart, setCart] = useState([]);
   const [orders, setOrders] = useState([])
-  const [services, setServices] = useState([]);
+  const [services, setServices] = useState(initialServices);
   
-  const auth = getAuth(app);
-  const googleProvider = new GoogleAuthProvider();
-  const API_URL = import.meta.env.VITE_API_Link;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
   // Create user in our backend - memoized with useCallback
@@ -53,38 +48,53 @@ const AuthProvider = ({ children }) => {
 
   // Auth state observer
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        try {
-          // Check if user exists in our database
-          await axios.get(`${API_URL}/users/${currentUser.email}`);
+    let unsubscribe;
+    let isMounted = true;
 
-          // Fetch user's cart if exists
-          try {
-            const cartResponse = await axios.get(
-              `${API_URL}/cart/${currentUser.uid}`
-            );
-            setCart(cartResponse.data);
-          } catch (cartErr) {
-            console.error("Error fetching cart:", cartErr);
+    import('firebase/auth')
+      .then(({ getAuth, onAuthStateChanged }) => {
+        if (!isMounted) return;
+
+        unsubscribe = onAuthStateChanged(getAuth(app), async currentUser => {
+          if (currentUser) {
+            try {
+              await axios.get(`${API_URL}/users/${currentUser.email}`);
+
+              try {
+                const cartResponse = await axios.get(
+                  `${API_URL}/cart/${currentUser.uid}`
+                );
+                setCart(cartResponse.data);
+              } catch (cartError) {
+                console.error('Error fetching cart:', cartError);
+                setCart([]);
+              }
+            } catch (userError) {
+              if (userError.response?.status === 404) {
+                await createBackendUser(currentUser);
+              } else {
+                console.error('Error checking user:', userError);
+              }
+            }
+          } else {
             setCart([]);
           }
-        } catch (err) {
-          if (err.response?.status === 404) {
-            // User doesn't exist in our DB, create them
-            await createBackendUser(currentUser);
-          } else {
-            console.error("Error checking user:", err);
-          }
-        }
-      } else {
-        setCart([]); // Clear cart when user logs out
-      }
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [auth, API_URL, createBackendUser]);
+          setUser(currentUser);
+          setLoading(false);
+        });
+      })
+      .catch(authError => {
+        if (!isMounted) return;
+        console.error('Unable to initialize Firebase authentication:', authError);
+        setError('Authentication service is unavailable');
+        setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+      unsubscribe?.();
+    };
+  }, [API_URL, createBackendUser]);
 
   // Auth functions
   const signUp = async ({ displayName, email, password, phoneNumber }) => {
@@ -92,6 +102,13 @@ const AuthProvider = ({ children }) => {
     setError(null);
 
     try {
+      const {
+        createUserWithEmailAndPassword,
+        getAuth,
+        updateProfile,
+      } = await import('firebase/auth');
+      const auth = getAuth(app);
+
       // First check if user exists in our backend
       try {
         await axios.get(`${API_URL}/users/${email}`);
@@ -133,6 +150,8 @@ const AuthProvider = ({ children }) => {
     setError(null);
 
     try {
+      const { getAuth, signInWithEmailAndPassword } = await import('firebase/auth');
+      const auth = getAuth(app);
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -151,13 +170,28 @@ const AuthProvider = ({ children }) => {
     }
   };
 
+  const sendPasswordReset = async email => {
+    if (!email?.trim()) {
+      throw new Error('Email is required to reset your password');
+    }
+
+    const { getAuth, sendPasswordResetEmail } = await import('firebase/auth');
+    await sendPasswordResetEmail(getAuth(app), email.trim());
+  };
+
   // Sign in with Google
   const signInWithGoogle = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      const { getAuth, GoogleAuthProvider, signInWithPopup } = await import(
+        'firebase/auth'
+      );
+      const result = await signInWithPopup(
+        getAuth(app),
+        new GoogleAuthProvider()
+      );
       const user = result.user;
 
       // Check if user exists in our backend
@@ -183,7 +217,8 @@ const AuthProvider = ({ children }) => {
   const logOut = async () => {
     setLoading(true);
     try {
-      await signOut(auth);
+      const { getAuth, signOut } = await import('firebase/auth');
+      await signOut(getAuth(app));
       setCart([]); // Clear cart on logout
     } finally {
       setLoading(false);
@@ -192,12 +227,15 @@ const AuthProvider = ({ children }) => {
 
   // Fetch products data - memoized with useCallback
   const fetchProducts = useCallback(async () => {
+    setCatalogLoading(true);
     try {
       const response = await axios.get(`${API_URL}/products`);
       setProducts(response.data);
     } catch (err) {
       console.error("Error fetching products:", err);
       setError("Failed to load products");
+    } finally {
+      setCatalogLoading(false);
     }
   }, [API_URL]);
 
@@ -227,9 +265,7 @@ const AuthProvider = ({ children }) => {
         addedAt: new Date().toISOString(),
       };
 
-      console.log("✅ API URL:", API_URL);
       const response = await axios.post(`${API_URL}/cart`, cartItem);
-      console.log("✅ API URL:", API_URL);
       setCart((prev) => [...prev, response.data]);
       return response.data;
     } catch (error) {
@@ -342,10 +378,17 @@ const fetchOrders = useCallback(async (email) => {
 
   // Fetch products when the component mounts
 useEffect(() => {
-  fetchProducts();
-  fetchServices();
-  fetchOrders(user?.email);
-}, [fetchProducts, fetchOrders, user?.email]);
+  if (initialProducts.length === 0) fetchProducts();
+  if (initialServices.length === 0) fetchServices();
+  if (user?.email) fetchOrders(user.email);
+}, [
+  fetchProducts,
+  fetchServices,
+  fetchOrders,
+  initialProducts.length,
+  initialServices.length,
+  user?.email,
+]);
 
 
 
@@ -359,9 +402,11 @@ useEffect(() => {
   const authInfo = {
     user,
     loading,
+    catalogLoading,
     error,
     signUp,
     signIn,
+    sendPasswordReset,
     signInWithGoogle,
     logOut,
     products,

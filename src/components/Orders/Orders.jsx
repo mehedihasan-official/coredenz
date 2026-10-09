@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useContext, useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { 
   FaBoxOpen, 
   FaShippingFast, 
@@ -26,7 +28,7 @@ const Orders = () => {
                     <FaBoxOpen className="text-gray-400 text-5xl mx-auto mb-4" />
                     <h2 className="text-xl font-semibold text-gray-700 mb-2">Please sign in to view your orders</h2>
                     <Link 
-                        to="/login" 
+                        href="/sign-in" 
                         className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded mt-4"
                     >
                         Sign In
@@ -158,7 +160,7 @@ const Orders = () => {
                             : `You don't have any ${statusFilter} orders.`}
                     </p>
                     <Link 
-                        to="/products" 
+                        href="/products" 
                         className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded"
                     >
                         Browse Products
@@ -208,7 +210,7 @@ const Orders = () => {
                                         </div>
                                         <div className="ml-4">
                                             <Link 
-                                                to={`/products/${product.productId}`} 
+                                                href={`/single-product/${product.productId}`} 
                                                 className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
                                             >
                                                 View Product
@@ -237,7 +239,7 @@ const Orders = () => {
                                     </div>
                                     <div className="flex space-x-3">
                                         <Link 
-                                            to={`/orders/${order._id}`}
+                                            href="/orders"
                                             className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50"
                                         >
                                             View Details

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
 import {
@@ -7,7 +9,8 @@ import {
   FaArrowRight,
   FaShoppingBag,
 } from 'react-icons/fa';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Loading from '../Loading/Loading';
 import {
   ShoppingCart,
@@ -25,7 +28,6 @@ const Cart = () => {
   const {
     user,
     cart,
-    setCart,
     removeFromCart,
     updateCartItemQuantity,
     products,
@@ -34,6 +36,7 @@ const Cart = () => {
   const [cartProducts, setCartProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const router = useRouter();
 
   // Match cart items with products data
   useEffect(() => {
@@ -220,7 +223,7 @@ const Cart = () => {
               shopping to fill it up!
             </p>
             <Link
-              to="/products"
+              href="/products"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-[#00B4D8] to-[#040144] text-white px-8 py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
               <Package className="w-5 h-5" />
@@ -460,11 +463,22 @@ const Cart = () => {
               <button
                 onClick={() => {
                   if (user) {
-                    window.location.href = '/checkout';
+                    sessionStorage.setItem(
+                      'coredenz-checkout',
+                      JSON.stringify({
+                        cartProducts,
+                        subtotal,
+                        shippingFee,
+                        total,
+                      })
+                    );
+                    router.push('/checkout');
                   } else {
-                    window.location.href = `/sign-in?redirect=${encodeURIComponent(
-                      window.location.pathname
-                    )}`;
+                    router.push(
+                      `/sign-in?redirect=${encodeURIComponent(
+                        window.location.pathname
+                      )}`
+                    );
                   }
                 }}
                 disabled={
@@ -481,7 +495,7 @@ const Cart = () => {
 
               <div className="mt-6 text-center">
                 <Link
-                  to="/products"
+                  href="/products"
                   className="text-[#00B4D8] hover:text-[#040144] font-medium text-sm transition-colors inline-flex items-center gap-2"
                 >
                   <ArrowRight className="w-4 h-4 rotate-180" />

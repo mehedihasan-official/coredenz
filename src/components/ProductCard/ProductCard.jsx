@@ -1,17 +1,11 @@
 import { FaStar, FaRegHeart, FaHeart, FaShoppingCart } from "react-icons/fa";
-import { useState, useContext } from "react";
-import { Link } from "react-router-dom";
-import { AuthContext } from "../../provider/AuthProvider/AuthProvider";
-import { toast } from "react-toastify";
+import { useState } from "react";
+import Link from 'next/link';
 import AddToCart from "../AddToCart/AddToCart";
 
 const ProductCard = ({ product }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
 
-
-  // Access user and addToCart function from AuthContext
-  const { user, addToCart } = useContext(AuthContext);
-  
 
   // Get the first image from the images array
   const productImage = product?.images?.[0] || "";
@@ -35,9 +29,7 @@ const ProductCard = ({ product }) => {
       style={{ minHeight: 370 }}
     >
       <Link
-        to={{
-          pathname: `/single-product/${product.id}`,
-        }}
+        href={`/single-product/${product.id || product._id}`}
         className="block flex-1"
         style={{ minHeight: 0 }}
       >

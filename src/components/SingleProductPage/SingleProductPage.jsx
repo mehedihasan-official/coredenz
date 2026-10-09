@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useContext, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useRouter, useParams } from 'next/navigation';
 import { FiArrowLeft, FiShoppingCart, FiStar } from "react-icons/fi";
 import PropTypes from "prop-types";
 import { AuthContext } from "../../provider/AuthProvider/AuthProvider";
@@ -8,10 +10,12 @@ import AddToCart from "../AddToCart/AddToCart";
 const SingleProductPage = () => {
   const { products } = useContext(AuthContext);
   const { id: paramId } = useParams();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // Find product by id from params (ensure type match)
-  const product = products.find((p) => String(p.id) === String(paramId));
+  const product = products.find(
+    p => String(p.id ?? p._id) === String(paramId)
+  );
 
   // Image Gallery state for main image index
   const [mainImageIndex, setMainImageIndex] = useState(0);
@@ -24,7 +28,7 @@ const SingleProductPage = () => {
             Product not found or data missing.
           </p>
           <button
-            onClick={() => navigate("/products")}
+            onClick={() => router.push('/products')}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Back to Products
@@ -52,13 +56,7 @@ const SingleProductPage = () => {
     ram = "",
     ssd = "",
     display = "",
-    graphic = "",
     storage = "",
-    battery = "",
-    utility_properties = "",
-    weight = "",
-    dimensions = "",
-    color = "",
     condition = "",
   } = specification;
 
@@ -68,7 +66,7 @@ const SingleProductPage = () => {
       <header className="bg-white shadow-sm py-4 px-4 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto flex items-center">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => router.back()}
             className="mr-4 p-2 rounded-full hover:bg-gray-100"
             aria-label="Go back"
           >
@@ -97,7 +95,8 @@ const SingleProductPage = () => {
                 alt={name}
                 className="w-full h-[220px] sm:h-[350px] md:h-[400px] lg:h-[500px] object-contain transition-all duration-300"
                 style={{ maxHeight: "500px" }}
-                loading="lazy"
+                loading="eager"
+                fetchPriority="high"
               />
             </div>
             {/* Thumbnail Images */}
@@ -212,12 +211,13 @@ const SingleProductPage = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <AddToCart product={product} />
              <button
-  onClick={() =>
-    navigate('/checkout', {
-      state: {
+  onClick={() => {
+    sessionStorage.setItem(
+      'coredenz-checkout',
+      JSON.stringify({
         cartProducts: [
           {
-            productId: product.id,
+            productId: product.id || product._id,
             productDetails: {
               name: product.name,
               image: product.images?.[0],
@@ -227,11 +227,12 @@ const SingleProductPage = () => {
           },
         ],
         subtotal: product.price,
-        shippingFee: 0, // or any logic you have for shipping
-        total: product.price, // subtotal + shipping
-      },
-    })
-  }
+        shippingFee: 0,
+        total: product.price,
+      })
+    );
+    router.push('/checkout');
+  }}
   className="flex-1 border border-indigo-600 text-indigo-600 hover:bg-indigo-50 py-3 px-6 rounded-lg font-medium transition-colors duration-200"
 >
   Buy Now

@@ -1,6 +1,8 @@
+'use client';
+
 import React from "react";
 import { FaWhatsapp, FaEnvelope, FaPhone, FaArrowRight } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import Link from 'next/link';
 import fiverrProfile from "../assets/images/fiverr-Profile-img.png";
 import meFiverrProfile from "../assets/images/Me-fiverr-profile.png"
 import fiverrGigImage from "../assets/images/fiverr-gig-image.png";
@@ -184,7 +186,7 @@ const WebDevLandingPage = () => {
             Check out my professional Web Development offerings
           </p>
           <Link
-            to="/services/development"
+            href="/services/development"
             className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-bold transition-colors"
           >
             View Development Services
