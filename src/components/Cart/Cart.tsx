@@ -1,17 +1,8 @@
 'use client';
 
-import React, { useContext, useEffect, useState } from 'react';
-import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
-import {
-  FaPlus,
-  FaMinus,
-  FaTrash,
-  FaArrowRight,
-  FaShoppingBag,
-} from 'react-icons/fa';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Loading from '../Loading/Loading';
 import {
   ShoppingCart,
   Trash2,
@@ -23,6 +14,8 @@ import {
   ShieldCheck,
   Tag,
 } from 'lucide-react';
+import { useAuth } from '../../provider/AuthProvider/AuthProvider';
+import type { CartItem, CartProduct, Product } from '@/src/types/catalog';
 
 const Cart = () => {
   const {
@@ -31,81 +24,74 @@ const Cart = () => {
     removeFromCart,
     updateCartItemQuantity,
     products,
+    catalogLoading,
     addToCart,
-  } = useContext(AuthContext);
-  const [cartProducts, setCartProducts] = useState([]);
+  } = useAuth();
+  const [cartProducts, setCartProducts] = useState<CartProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const router = useRouter();
 
   // Match cart items with products data
   useEffect(() => {
-    const fetchCartProducts = () => {
-      setIsLoading(true);
-      try {
-        let activeCart = [];
+    if (catalogLoading) return;
 
-        if (user?.email) {
-          activeCart = cart;
-        } else {
-          const guestCart = JSON.parse(
-            localStorage.getItem('guestCart') || '[]'
-          );
-          activeCart = guestCart.map(item => ({
+    try {
+      const storedCart: unknown = user?.email
+        ? cart
+        : JSON.parse(localStorage.getItem('guestCart') || '[]');
+      const activeCart: CartItem[] = Array.isArray(storedCart)
+        ? storedCart.map((item: CartItem) => ({
             ...item,
-            productId: item.id || item.productId,
-            _id: item.id || item.productId,
-          }));
-        }
+            productId: item.productId ?? item.id ?? '',
+            _id: item._id ?? String(item.productId ?? item.id ?? ''),
+          }))
+        : [];
 
-        const matchedItems = activeCart.map(item => {
-          const matchedProduct = products.find(p => p.id === item.productId);
-          const existingDetails = item?.productDetails || {};
-
-          if (matchedProduct) {
-            return {
-              ...item,
-              productDetails: {
-                ...existingDetails,
-                ...matchedProduct,
-                image:
-                  matchedProduct.images?.[0] ||
-                  existingDetails.image ||
-                  'https://via.placeholder.com/150',
-              },
+      const matchedItems = activeCart.map((item): CartProduct => {
+        const matchedProduct = products.find(
+          product => String(product.id) === String(item.productId)
+        );
+        const existingDetails = item.productDetails ?? {};
+        const productDetails: Product = matchedProduct
+          ? {
+              ...existingDetails,
+              ...matchedProduct,
+              id: matchedProduct.id,
+              image:
+                matchedProduct.images?.[0] ??
+                existingDetails.image ??
+                matchedProduct.image ??
+                '',
+            }
+          : {
+              ...existingDetails,
+              id: item.productId,
+              name: existingDetails.name ?? 'Product unavailable',
+              price: Number(existingDetails.price ?? 0),
+              images: existingDetails.images ?? [],
+              image: existingDetails.image ?? existingDetails.images?.[0] ?? '',
             };
-          }
-          return {
-            ...item,
-            productDetails: existingDetails || {
-              name: 'Product unavailable',
-              price: 0,
-              image: 'https://via.placeholder.com/150',
-              specification: {},
-            },
-          };
-        });
 
-        setCartProducts(matchedItems);
-      } catch (error) {
-        console.error('Error loading cart:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+        return { ...item, productDetails };
+      });
 
-    if (products.length) {
-      fetchCartProducts();
+      setCartProducts(matchedItems);
+    } catch (error) {
+      console.error('Error loading cart:', error);
+      setCartProducts([]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [cart, products, user]);
+  }, [cart, catalogLoading, products, user]);
 
-  const handleQuantityChange = async (productId, delta) => {
+  const handleQuantityChange = async (productId: string | number, delta: number) => {
     if (isProcessing) return;
     setIsProcessing(true);
 
     try {
       const currentItem = cartProducts.find(
-        item => item.productId === productId
+        item => String(item.productId) === String(productId)
       );
       if (!currentItem) throw new Error('Item not found');
 
@@ -115,16 +101,20 @@ const Cart = () => {
       if (user?.email) {
         await updateCartItemQuantity(productId, newQuantity);
       } else {
-        const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+        const guestCart: CartItem[] = JSON.parse(
+          localStorage.getItem('guestCart') || '[]'
+        );
         const updatedCart = guestCart.map(item =>
-          item.id === productId ? { ...item, quantity: newQuantity } : item
+          String(item.id ?? item.productId) === String(productId)
+            ? { ...item, quantity: newQuantity }
+            : item
         );
         localStorage.setItem('guestCart', JSON.stringify(updatedCart));
       }
 
       setCartProducts(prev =>
         prev.map(item =>
-          item.productId === productId
+          String(item.productId) === String(productId)
             ? { ...item, quantity: newQuantity }
             : item
         )
@@ -136,22 +126,34 @@ const Cart = () => {
     }
   };
 
-  const handleRemoveItem = async productId => {
+  const handleRemoveItem = async (productId: string | number) => {
     if (isProcessing) return;
     setIsProcessing(true);
 
     try {
       const itemToRemove = cartProducts.find(
-        item => item.productId === productId
+        item => String(item.productId) === String(productId)
       );
       const cartItemId = itemToRemove?._id;
 
-      if (cartItemId) {
+      if (user?.email && cartItemId) {
         await removeFromCart(cartItemId);
+      } else {
+        const guestCart: CartItem[] = JSON.parse(
+          localStorage.getItem('guestCart') || '[]'
+        );
+        localStorage.setItem(
+          'guestCart',
+          JSON.stringify(
+            guestCart.filter(
+              item => String(item.id ?? item.productId) !== String(productId)
+            )
+          )
+        );
       }
 
       setCartProducts(prev =>
-        prev.filter(item => item.productId !== productId)
+        prev.filter(item => String(item.productId) !== String(productId))
       );
     } catch (err) {
       console.error('Remove failed:', err);
@@ -162,7 +164,9 @@ const Cart = () => {
 
   useEffect(() => {
     const transferGuestCartToBackend = async () => {
-      const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+      const guestCart: CartItem[] = JSON.parse(
+        localStorage.getItem('guestCart') || '[]'
+      );
 
       if (
         guestCart.length > 0 &&
@@ -171,12 +175,11 @@ const Cart = () => {
       ) {
         try {
           for (const item of guestCart) {
-            const payload = {
-              productId: item.productId || item.id,
-              quantity: item.quantity,
-              specification: item?.specification || {},
-            };
-            await addToCart(payload);
+            const productId = item.productId ?? item.id;
+            if (productId === undefined) {
+              throw new Error('Guest cart item is missing its product ID.');
+            }
+            await addToCart(productId, item.quantity);
           }
           localStorage.removeItem('guestCart');
         } catch (err) {

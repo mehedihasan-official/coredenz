@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import {
   FiFilter,
@@ -10,13 +10,14 @@ import {
   FiChevronDown,
   FiSearch,
 } from 'react-icons/fi';
-import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
+import { useAuth } from '../../provider/AuthProvider/AuthProvider';
 import Link from 'next/link';
+import type { Product } from '../../types/catalog';
 
 const Products = () => {
-  const { products, catalogLoading } = useContext(AuthContext);
+  const { products, catalogLoading } = useAuth();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); // 'grid' or 'list'
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
     brand: 'all',
@@ -26,9 +27,9 @@ const Products = () => {
     rating: 'all',
     sort: 'featured',
   });
-  const [filteredProducts, setFilteredProducts] = useState(products);
-  const [brands, setBrands] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
+  const [brands, setBrands] = useState<(string | undefined)[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
 
   // Extract unique brands, categories, and price range when products change
@@ -66,7 +67,7 @@ const Products = () => {
         result = result.filter(
           product =>
             product.name.toLowerCase().includes(query) ||
-            product.brand.toLowerCase().includes(query) ||
+            product.brand!.toLowerCase().includes(query) ||
             (product.description &&
               product.description.toLowerCase().includes(query)) ||
             (product.category && product.category.toLowerCase().includes(query))
@@ -122,7 +123,7 @@ const Products = () => {
           break;
         case 'newest':
           result.sort(
-            (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
           );
           break;
         case 'featured':
@@ -251,7 +252,7 @@ const Products = () => {
                   name="brand"
                   type="radio"
                   checked={filters.brand === brand}
-                  onChange={() => setFilters({ ...filters, brand })}
+                  onChange={() => setFilters({ ...filters, brand: brand! })}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                 />
                 <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900">

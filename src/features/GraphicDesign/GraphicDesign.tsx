@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import {
   FaPalette,
   FaPencilRuler,
@@ -33,13 +33,13 @@ import {
 } from 'react-icons/bs';
 import { HiSparkles, HiLightningBolt } from 'react-icons/hi';
 import { AiFillStar } from 'react-icons/ai';
-import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
+import { useAuth } from '../../provider/AuthProvider/AuthProvider';
 import Services from '../../components/Services/Services';
 
 
 
 const GraphicDesign = () => {
-  const { services } = useContext(AuthContext);
+  const { services } = useAuth();
 
   const [activeCategory, setActiveCategory] = useState('all');
   const packages = [
@@ -224,7 +224,7 @@ const GraphicDesign = () => {
   const allowedCategories = ['branding', 'digital', 'print', 'creative'];
 
   const filteredServicesCategory = services?.filter(s =>
-    allowedCategories.includes(s.category?.toLowerCase())
+    allowedCategories.includes(s.category?.toLowerCase() as string)
     );
     
 

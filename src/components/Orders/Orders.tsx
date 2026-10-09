@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { 
   FaBoxOpen, 
@@ -14,10 +14,10 @@ import {
   FaMoneyBillWave
 } from 'react-icons/fa';
 import { BsBoxSeam, BsClockHistory } from 'react-icons/bs';
-import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
+import { useAuth } from '../../provider/AuthProvider/AuthProvider';
 
 const Orders = () => {
-    const { user, orders } = useContext(AuthContext);
+    const { user, orders } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
 
@@ -107,7 +107,7 @@ const Orders = () => {
     };
 
     const formatDate = (dateString) => {
-        const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
         return new Date(dateString).toLocaleDateString('en-US', options);
     };
 
@@ -188,7 +188,7 @@ const Orders = () => {
                                 </div>
                                 <div className="flex items-center">
                                     <span className="text-sm font-medium mr-2">Total:</span>
-                                    <span className="font-bold">${order.total.toFixed(2)}</span>
+                                    <span className="font-bold">${order.total!.toFixed(2)}</span>
                                 </div>
                             </div>
 
@@ -206,7 +206,7 @@ const Orders = () => {
                                         <div className="ml-4 flex-1">
                                             <h3 className="font-medium">{product.name}</h3>
                                             <p className="text-sm text-gray-500">Qty: {product.quantity}</p>
-                                            <p className="text-sm font-medium mt-1">${product.price.toFixed(2)}</p>
+                                            <p className="text-sm font-medium mt-1">${product.price!.toFixed(2)}</p>
                                         </div>
                                         <div className="ml-4">
                                             <Link 

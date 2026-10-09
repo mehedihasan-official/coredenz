@@ -1,15 +1,23 @@
 import { FaShoppingCart } from "react-icons/fa";
-import { useContext, useState } from "react";
-import { AuthContext } from "../../provider/AuthProvider/AuthProvider";
+import { useState } from "react";
+import { useAuth } from "../../provider/AuthProvider/AuthProvider";
 import { toast } from "react-toastify";
-import PropTypes from "prop-types";
+import type { Product } from '@/src/types/catalog';
 
-const AddToCart = ({ product }) => {
-  const { user, addToCart } = useContext(AuthContext);
+interface AddToCartProps {
+  product: Product;
+}
+
+const AddToCart = ({ product }: AddToCartProps) => {
+  const { user, addToCart } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleAddToCart = async () => {
-    if (!product?.id || !product?.name || !product?.price) {
+    if (
+      (typeof product.id !== 'string' && typeof product.id !== 'number') ||
+      !product.name ||
+      !Number.isFinite(product.price)
+    ) {
       return toast.error("Product data is incomplete!");
     }
 
@@ -62,15 +70,6 @@ const AddToCart = ({ product }) => {
       {isProcessing ? "Adding..." : "Add to Cart"}
     </button>
   );
-};
-
-AddToCart.propTypes = {
-  product: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    name: PropTypes.string.isRequired,
-    price: PropTypes.number.isRequired,
-    images: PropTypes.arrayOf(PropTypes.string),
-  }).isRequired,
 };
 
 export default AddToCart;

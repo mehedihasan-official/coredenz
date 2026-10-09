@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import {
   FaLaptopCode,
   FaMobileAlt,
@@ -18,11 +18,11 @@ import {
 import { MdDesignServices, MdSpeed, MdSecurity } from 'react-icons/md';
 import { BsCheck2Circle, BsArrowRight, BsStarFill } from 'react-icons/bs';
 import { HiSparkles } from 'react-icons/hi';
-import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
+import { useAuth } from '../../provider/AuthProvider/AuthProvider';
 import Services from '../../components/Services/Services';
 
 const Development = () => {
-  const { services } = useContext(AuthContext);
+  const { services } = useAuth();
 
   const [activeCategory, setActiveCategory] = useState('all');
   const [formData, setFormData] = useState({
@@ -150,7 +150,7 @@ const Development = () => {
   const allowedCategories = ['web', 'mobile', 'backend'];
 
   const filteredServicesCategory = services?.filter(s =>
-    allowedCategories.includes(s.category?.toLowerCase())
+    allowedCategories.includes(s.category?.toLowerCase() as string)
   );
 
   // Apply activeCategory filter on top of that
@@ -561,7 +561,7 @@ const Development = () => {
                     setFormData({ ...formData, message: e.target.value })
                   }
                   placeholder="Tell us about your project"
-                  rows="4"
+                  rows={4}
                   required
                   className="w-full px-4 py-3 rounded-lg bg-white/20 placeholder-blue-200 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-[#00B4D8]"
                 ></textarea>

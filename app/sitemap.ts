@@ -20,9 +20,9 @@ export default async function sitemap() {
 
   const { products } = await getCatalog();
   const productRoutes = products
-    .filter(product => product.id || product._id)
+    .filter(product => product.id != null || product._id != null)
     .map(product => ({
-      url: `${baseUrl}/single-product/${encodeURIComponent(product.id || product._id)}`,
+      url: `${baseUrl}/single-product/${encodeURIComponent(String(product.id || product._id))}`,
       lastModified: product.updatedAt ? new Date(product.updatedAt) : new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,

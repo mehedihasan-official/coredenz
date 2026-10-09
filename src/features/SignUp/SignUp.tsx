@@ -1,32 +1,48 @@
 'use client';
 
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiPhone } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Swal from 'sweetalert2';
-import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
+import { useAuth } from '../../provider/AuthProvider/AuthProvider';
+
+interface SignUpFormData {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    phone: string;
+}
+
+interface SignUpFormErrors {
+    name?: string | null;
+    email?: string | null;
+    password?: string | null;
+    confirmPassword?: string | null;
+    phone?: string | null;
+}
 
 const SignUp = () => {
-    const [form, setForm] = useState({
+    const [form, setForm] = useState<SignUpFormData>({
         name: '',
         email: '',
         password: '',
         confirmPassword: '',
         phone: ''
     });
-    const [errors, setErrors] = useState({});
+    const [errors, setErrors] = useState<SignUpFormErrors>({});
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     
-    const { signUp, signInWithGoogle } = useContext(AuthContext);
+    const { signUp, signInWithGoogle } = useAuth();
     const router = useRouter();
 
-    const showSuccessAlert = (message) => {
+    const showSuccessAlert = (message: string) => {
         Swal.fire({
             title: 'Success!',
             text: message,
@@ -38,7 +54,7 @@ const SignUp = () => {
         });
     };
 
-    const showErrorAlert = (message) => {
+    const showErrorAlert = (message: string) => {
         Swal.fire({
             title: 'Error!',
             text: message,
@@ -50,8 +66,9 @@ const SignUp = () => {
         });
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { value } = e.target;
+        const name = e.target.name as keyof SignUpFormData;
         setForm({
             ...form,
             [name]: value
@@ -64,8 +81,8 @@ const SignUp = () => {
         }
     };
 
-    const validateForm = () => {
-        const newErrors = {};
+    const validateForm = (): boolean => {
+        const newErrors: SignUpFormErrors = {};
         if (!form.name.trim()) newErrors.name = 'Full name is required';
         if (!form.email.trim()) {
             newErrors.email = 'Email is required';
@@ -87,7 +104,7 @@ const SignUp = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
         

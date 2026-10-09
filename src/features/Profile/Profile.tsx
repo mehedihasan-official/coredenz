@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { 
   FaUser, 
@@ -12,13 +12,14 @@ import {
   FaBoxOpen,
   FaShippingFast,
   FaCheckCircle,
-  FaTimesCircle
+  FaTimesCircle,
+  FaUniversity,
 } from 'react-icons/fa';
 import { BsCreditCard } from 'react-icons/bs';
-import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
+import { useAuth } from '../../provider/AuthProvider/AuthProvider';
 
 const Profile = () => {
-    const { user, orders } = useContext(AuthContext);
+    const { user, orders } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
@@ -219,7 +220,7 @@ const Profile = () => {
                                                 <div>
                                                     <h3 className="font-medium">Order #{order._id.slice(-6).toUpperCase()}</h3>
                                                     <p className="text-sm text-gray-500">
-                                                        {new Date(order.orderDate).toLocaleDateString()}
+                                                        {new Date(order.orderDate as string).toLocaleDateString()}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center">
@@ -242,7 +243,7 @@ const Profile = () => {
                                                             <p className="font-medium text-sm">{product.name}</p>
                                                             <p className="text-gray-500 text-sm">Qty: {product.quantity}</p>
                                                         </div>
-                                                        <p className="font-medium">${product.price.toFixed(2)}</p>
+                                                        <p className="font-medium">${product.price!.toFixed(2)}</p>
                                                     </div>
                                                 ))}
                                                 {order.products.length > 2 && (
@@ -253,7 +254,7 @@ const Profile = () => {
                                             </div>
                                             
                                             <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                                                <p className="font-medium">Total: ${order.total.toFixed(2)}</p>
+                                                <p className="font-medium">Total: ${order.total!.toFixed(2)}</p>
                                                 <Link 
                                                     href="/orders"
                                                     className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"

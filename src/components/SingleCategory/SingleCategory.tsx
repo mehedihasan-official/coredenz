@@ -1,17 +1,17 @@
 'use client';
 
-import React, { useContext } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import ProductCard from '../../components/ProductCard/ProductCard';
-import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
+import { useAuth } from '../../provider/AuthProvider/AuthProvider';
 import { FaArrowLeft } from 'react-icons/fa';
 import Loading from '../Loading/Loading';
 
 const SingleCategory = () => {
     const { category } = useParams();
-    const { products, catalogLoading } = useContext(AuthContext);
-    const normalizedCategory = category?.toLowerCase().trim() || '';
+    const { products, catalogLoading } = useAuth();
+    const normalizedCategory = (Array.isArray(category) ? category[0] : category)?.toLowerCase().trim() || '';
     const filteredProducts = products.filter(product => {
         const productCategory = product.category?.toLowerCase().trim();
         return productCategory === normalizedCategory;

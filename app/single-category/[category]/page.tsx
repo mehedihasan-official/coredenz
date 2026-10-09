@@ -1,6 +1,10 @@
 import SingleCategory from '@/src/components/SingleCategory/SingleCategory';
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ category: string }>;
+}) {
   const { category } = await params;
   const title = `${category.charAt(0).toUpperCase()}${category.slice(1)} products`;
 

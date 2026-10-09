@@ -1,11 +1,11 @@
 'use client';
 
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { AuthContext } from '@/src/provider/AuthProvider/AuthProvider';
+import { useAuth } from '@/src/provider/AuthProvider/AuthProvider';
 
 export default function ForgotPassword() {
-  const { sendPasswordReset } = useContext(AuthContext);
+  const { sendPasswordReset } = useAuth();
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');

@@ -1,31 +1,106 @@
-import React, { useState, useEffect, useCallback } from "react";
-import app from "../../Firebase/firebase.config";
-import axios from "axios";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from 'react';
+import axios, { isAxiosError } from 'axios';
+import type { User as FirebaseUser, UserCredential } from 'firebase/auth';
+import app from '../../Firebase/firebase.config';
+import { getApiBaseUrl } from '@/src/lib/api';
+import type {
+  CartItem,
+  Order,
+  Product,
+  ProductId,
+  Service,
+} from '@/src/types/catalog';
+import { normalizeProduct } from '@/src/types/catalog';
 
-export const AuthContext = React.createContext();
+interface AuthContextValue {
+  user: FirebaseUser | null;
+  loading: boolean;
+  catalogLoading: boolean;
+  error: string | null;
+  products: Product[];
+  services: Service[];
+  cart: CartItem[];
+  orders: Order[];
+  signUp: (input: {
+    displayName: string;
+    email: string;
+    password: string;
+    phoneNumber?: string;
+  }) => Promise<UserCredential>;
+  signIn: (email: string, password: string) => Promise<UserCredential>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  signInWithGoogle: () => Promise<UserCredential>;
+  logOut: () => Promise<void>;
+  addToCart: (productId: ProductId, quantity?: number) => Promise<CartItem>;
+  removeFromCart: (cartItemId: string) => Promise<void>;
+  updateCartItemQuantity: (
+    productId: ProductId,
+    newQuantity: number
+  ) => Promise<CartItem>;
+  fetchCart: () => Promise<void>;
+  setCart: Dispatch<SetStateAction<CartItem[]>>;
+  clearError: () => void;
+  placeOrder: (orderData: Record<string, unknown>) => Promise<unknown>;
+  fetchOrders: (email: string) => Promise<void>;
+}
+
+export const AuthContext = createContext<AuthContextValue | undefined>(
+  undefined
+);
+
+export function useAuth(): AuthContextValue {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within the AuthProvider.');
+  }
+  return context;
+}
+
+interface AuthProviderProps {
+  children: ReactNode;
+  initialProducts?: Product[];
+  initialServices?: Service[];
+}
 
 const AuthProvider = ({
   children,
   initialProducts = [],
   initialServices = [],
-}) => {
-  const [user, setUser] = useState(null);
+}: AuthProviderProps) => {
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [catalogLoading, setCatalogLoading] = useState(
     initialProducts.length === 0
   );
-  const [error, setError] = useState(null);
-  const [products, setProducts] = useState(initialProducts);
-  const [cart, setCart] = useState([]);
-  const [orders, setOrders] = useState([])
-  const [services, setServices] = useState(initialServices);
+  const [error, setError] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [services, setServices] = useState<Service[]>(initialServices);
   
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL = getApiBaseUrl();
+
+  const getErrorMessage = (cause: unknown, fallback: string): string =>
+    cause instanceof Error ? cause.message : fallback;
 
 
   // Create user in our backend - memoized with useCallback
   const createBackendUser = useCallback(
-    async (firebaseUser) => {
+    async (
+      firebaseUser: Pick<
+        FirebaseUser,
+        'uid' | 'email' | 'displayName' | 'photoURL' | 'providerData' | 'phoneNumber'
+      >
+    ) => {
       try {
         const userData = {
           uid: firebaseUser.uid,
@@ -38,9 +113,9 @@ const AuthProvider = ({
 
         const response = await axios.post(`${API_URL}/users`, userData);
         return response.data;
-      } catch (err) {
-        console.error("Error creating backend user:", err);
-        throw err;
+      } catch (cause) {
+        console.error('Error creating backend user:', cause);
+        throw cause;
       }
     },
     [API_URL]
@@ -58,19 +133,26 @@ const AuthProvider = ({
         unsubscribe = onAuthStateChanged(getAuth(app), async currentUser => {
           if (currentUser) {
             try {
-              await axios.get(`${API_URL}/users/${currentUser.email}`);
-
-              try {
-                const cartResponse = await axios.get(
-                  `${API_URL}/cart/${currentUser.uid}`
+              if (currentUser.email) {
+                await axios.get(
+                  `${API_URL}/users/${encodeURIComponent(currentUser.email)}`
                 );
-                setCart(cartResponse.data);
-              } catch (cartError) {
-                console.error('Error fetching cart:', cartError);
-                setCart([]);
+
+                try {
+                  const cartResponse = await axios.get<CartItem[]>(
+                    `${API_URL}/cart/${encodeURIComponent(currentUser.email)}`
+                  );
+                  setCart(cartResponse.data);
+                } catch (cartError) {
+                  console.error('Error fetching cart:', cartError);
+                  setCart([]);
+                }
               }
             } catch (userError) {
-              if (userError.response?.status === 404) {
+              if (
+                isAxiosError(userError) &&
+                userError.response?.status === 404
+              ) {
                 await createBackendUser(currentUser);
               } else {
                 console.error('Error checking user:', userError);
@@ -97,7 +179,17 @@ const AuthProvider = ({
   }, [API_URL, createBackendUser]);
 
   // Auth functions
-  const signUp = async ({ displayName, email, password, phoneNumber }) => {
+  const signUp = async ({
+    displayName,
+    email,
+    password,
+    phoneNumber,
+  }: {
+    displayName: string;
+    email: string;
+    password: string;
+    phoneNumber?: string;
+  }) => {
     setLoading(true);
     setError(null);
 
@@ -111,10 +203,10 @@ const AuthProvider = ({
 
       // First check if user exists in our backend
       try {
-        await axios.get(`${API_URL}/users/${email}`);
+        await axios.get(`${API_URL}/users/${encodeURIComponent(email)}`);
         throw new Error("User already exists with this email");
       } catch (err) {
-        if (err.response?.status !== 404) throw err;
+        if (!isAxiosError(err) || err.response?.status !== 404) throw err;
       }
 
       // Create Firebase user
@@ -131,12 +223,12 @@ const AuthProvider = ({
       await createBackendUser({
         ...userCredential.user,
         displayName,
-        phoneNumber,
+        phoneNumber: phoneNumber ?? null,
       });
 
       return userCredential;
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err, 'Unable to create your account.'));
       throw err;
     } finally {
       setLoading(false);
@@ -145,7 +237,7 @@ const AuthProvider = ({
 
   // Sign in with email and password
 
-  const signIn = async (email, password) => {
+  const signIn = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
 
@@ -159,18 +251,18 @@ const AuthProvider = ({
       );
 
       // Verify user exists in our backend
-      await axios.get(`${API_URL}/users/${email}`);
+      await axios.get(`${API_URL}/users/${encodeURIComponent(email)}`);
 
       return userCredential;
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err, 'Unable to sign in.'));
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const sendPasswordReset = async email => {
+  const sendPasswordReset = async (email: string) => {
     if (!email?.trim()) {
       throw new Error('Email is required to reset your password');
     }
@@ -198,7 +290,7 @@ const AuthProvider = ({
       try {
         await axios.get(`${API_URL}/users/${user.email}`);
       } catch (err) {
-        if (err.response?.status === 404) {
+        if (isAxiosError(err) && err.response?.status === 404) {
           await createBackendUser(user);
         } else {
           throw err;
@@ -207,7 +299,7 @@ const AuthProvider = ({
 
       return result;
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err, 'Unable to sign in with Google.'));
       throw err;
     } finally {
       setLoading(false);
@@ -229,11 +321,15 @@ const AuthProvider = ({
   const fetchProducts = useCallback(async () => {
     setCatalogLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/products`);
-      setProducts(response.data);
+      const response = await axios.get<unknown>(`${API_URL}/products`);
+      if (!Array.isArray(response.data)) {
+        throw new Error('The products API returned an invalid response.');
+      }
+      setProducts(response.data.map(normalizeProduct));
+      setError(null);
     } catch (err) {
-      console.error("Error fetching products:", err);
-      setError("Failed to load products");
+      console.error('Error fetching products:', err);
+      setError(getErrorMessage(err, 'Failed to load products'));
     } finally {
       setCatalogLoading(false);
     }
@@ -243,7 +339,10 @@ const AuthProvider = ({
   // Fetch services data - memoized with useCallback
   const fetchServices = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_URL}/services`);
+      const response = await axios.get<Service[]>(`${API_URL}/services`);
+      if (!Array.isArray(response.data)) {
+        throw new Error('The services API returned an invalid response.');
+      }
       setServices(response.data);
     } catch (err) {
       console.error("Error fetching services:", err);
@@ -253,8 +352,14 @@ const AuthProvider = ({
 
 
   // Cart operations
-  const addToCart = async (productId, quantity = 1) => {
+  const addToCart = async (
+    productId: ProductId,
+    quantity = 1
+  ): Promise<CartItem> => {
     if (!user) throw new Error("You must be logged in to add to cart");
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      throw new Error('Quantity must be a positive whole number.');
+    }
 
     try {
       const cartItem = {
@@ -265,8 +370,13 @@ const AuthProvider = ({
         addedAt: new Date().toISOString(),
       };
 
-      const response = await axios.post(`${API_URL}/cart`, cartItem);
-      setCart((prev) => [...prev, response.data]);
+      const response = await axios.post<CartItem>(`${API_URL}/cart`, cartItem);
+      setCart(previous => [
+        ...previous.filter(
+          item => String(item.productId) !== String(response.data.productId)
+        ),
+        response.data,
+      ]);
       return response.data;
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -277,9 +387,15 @@ const AuthProvider = ({
   // Fetch user's cart - memoized with useCallback
   const fetchCart = useCallback(async () => {
     if (!user) return;
+    if (!user.email) {
+      setCart([]);
+      return;
+    }
 
     try { 
-      const response = await axios.get(`${API_URL}/cart/${user.email}`);
+      const response = await axios.get<CartItem[]>(
+        `${API_URL}/cart/${encodeURIComponent(user.email)}`
+      );
       setCart(response.data);
     } catch (error) {
       console.error("Error fetching cart:", error);
@@ -290,7 +406,10 @@ const AuthProvider = ({
 
 
 // Update cart item quantity
-const updateCartItemQuantity = async (productId, newQuantity) => {
+const updateCartItemQuantity = async (
+  productId: ProductId,
+  newQuantity: number
+): Promise<CartItem> => {
   if (!user || !user.email) {
     throw new Error("You must be logged in to update your cart");
   }
@@ -301,7 +420,9 @@ const updateCartItemQuantity = async (productId, newQuantity) => {
 
   try {
     // Find the current item for potential rollback
-    const currentItem = cart.find(item => item.productId === productId);
+    const currentItem = cart.find(
+      item => String(item.productId) === String(productId)
+    );
     if (!currentItem) {
       throw new Error("Item not found in cart");
     }
@@ -309,15 +430,20 @@ const updateCartItemQuantity = async (productId, newQuantity) => {
     // Optimistic UI update
     setCart(prev =>
       prev.map(item =>
-        item.productId === productId ? { ...item, quantity: newQuantity } : item
+        String(item.productId) === String(productId)
+          ? { ...item, quantity: newQuantity }
+          : item
       )
     );
 
     // Update backend using PATCH - note the numeric productId
-    const response = await axios.patch(`${API_URL}/cart/${productId}`, {
+    const response = await axios.patch<CartItem>(
+      `${API_URL}/cart/${encodeURIComponent(productId)}`,
+      {
       quantity: newQuantity,
-      userEmail: user.email
-    });
+      userEmail: user.email,
+      }
+    );
 
     return response.data;
   } catch (error) {
@@ -330,17 +456,18 @@ const updateCartItemQuantity = async (productId, newQuantity) => {
 
 
   // Remove item from cart
-  const removeFromCart = async (cartItemId) => {
+  const removeFromCart = async (cartItemId: string): Promise<void> => {
   if (!cartItemId) {
     console.warn("Invalid cartItemId passed to removeFromCart");
     return;
   }
 
   try {
-    await axios.delete(`${API_URL}/cart/${cartItemId}`);
+    await axios.delete(`${API_URL}/cart/${encodeURIComponent(cartItemId)}`);
     setCart((prev) => prev.filter((item) => item._id !== cartItemId));
   } catch (error) {
     console.error("Error removing from cart:", error);
+    throw error;
   }
 };
 
@@ -348,7 +475,7 @@ const updateCartItemQuantity = async (productId, newQuantity) => {
 
 
 // Place Order
-const placeOrder = async (orderData) => {
+const placeOrder = async (orderData: Record<string, unknown>): Promise<unknown> => {
   if (!user) {
     throw new Error("You must be logged in to place an order");
   }
@@ -363,11 +490,13 @@ const placeOrder = async (orderData) => {
 };
 
 // Fetch Order data(required email)
-const fetchOrders = useCallback(async (email) => {
+const fetchOrders = useCallback(async (email: string) => {
   if (!email) throw new Error("Email is required to fetch orders");
 
   try {
-    const response = await axios.get(`${API_URL}/orders/${email}`);
+    const response = await axios.get<Order[]>(
+      `${API_URL}/orders/${encodeURIComponent(email)}`
+    );
     setOrders(response.data);
   } catch (error) {
     console.error("Error fetching orders:", error);
@@ -419,7 +548,8 @@ useEffect(() => {
     fetchCart,
     clearError: () => setError(null),
     placeOrder,
-    orders
+    orders,
+    fetchOrders,
   };
 
   return (

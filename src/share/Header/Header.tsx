@@ -1,7 +1,7 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 import { usePathname } from 'next/navigation';
-import { AuthContext } from "../../provider/AuthProvider/AuthProvider";
+import { useAuth } from "../../provider/AuthProvider/AuthProvider";
 import logo from "../../assets/images/CoreDenz-logo.png";
 import { FaX } from "react-icons/fa6";
 import MobileNavMenu from "./MobileNavMenu";
@@ -26,14 +26,14 @@ const navItems = [
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState(null);
-  const { user, logOut, loading, cart } = useContext(AuthContext);
+  const { user, logOut, loading, cart } = useAuth();
   const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     if (user?.email) {
       setCartCount(cart.length);
     } else {
-      const guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
+      const guestCart = JSON.parse(localStorage.getItem("guestCart") || "[]") as unknown[];
       setCartCount(guestCart.length);
     }
   }, [user, cart]);

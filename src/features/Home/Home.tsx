@@ -1,10 +1,10 @@
 'use client';
 
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ProductCard from '../../components/ProductCard/ProductCard';
-import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
+import { useAuth } from '../../provider/AuthProvider/AuthProvider';
 import { BsFillLaptopFill } from 'react-icons/bs';
 import { MdDevicesOther } from 'react-icons/md';
 import { MdDesignServices } from 'react-icons/md';
@@ -22,7 +22,7 @@ import coverImg from '../../assets/images/CoreDenz-facebook-banner.jpg';
 import Services from '../../components/Services/Services';
 
 const Home = () => {
-  const { services, products, catalogLoading, error } = useContext(AuthContext);
+  const { services, products, catalogLoading, error } = useAuth();
   const [activeCategory, setActiveCategory] = useState('all');
 
   // DEVELOPMENT SERVICES ==============================
@@ -31,7 +31,7 @@ const Home = () => {
   const allowedCategories = ['web', 'mobile', 'backend'];
 
   const filteredServicesCategory = services?.filter(s =>
-    allowedCategories.includes(s.category?.toLowerCase())
+    allowedCategories.includes(s.category?.toLowerCase() as string)
   );
 
   // Apply activeCategory filter
@@ -51,7 +51,7 @@ const Home = () => {
   const graphicAllowedCategories = ['branding', 'digital', 'print', 'creative'];
 
   const graphicFilteredServicesCategory = services?.filter(s =>
-    graphicAllowedCategories.includes(s.category?.toLowerCase())
+    graphicAllowedCategories.includes(s.category?.toLowerCase() as string)
   );
 
   // Apply activeCategory filter
@@ -349,7 +349,7 @@ const Home = () => {
         </div>
 
         <Services
-          categories={devCategories}
+          categories={devCategories as string[]}
           activeCategory={activeCategory}
           setActiveCategory={setActiveCategory}
           filteredServices={filteredServices}
@@ -372,7 +372,7 @@ const Home = () => {
           </p>
 
           <Services
-            categories={graphicCategories}
+            categories={graphicCategories as string[]}
             activeCategory={activeCategory}
             setActiveCategory={setActiveCategory}
             filteredServices={graphicFilteredServices}

@@ -21,7 +21,7 @@ const WebDevLandingPage = () => {
       {/* Hero Section */}
       <section className="max-w-6xl mx-auto px-4 py-10 md:py-24 text-center">
         <img
-          src={meFiverrProfile}
+          src={meFiverrProfile.src}
           alt="Mehedi's Fiverr Profile"
           className=" rounded-lg mx-auto mb-4 shadow-lg"
         />
@@ -107,12 +107,12 @@ const WebDevLandingPage = () => {
             </div>
           </div>
           <div className="col-span-1 border rounded-lg p-2">
-            <img src={fiverrProfile} alt="Fiverr Profile" />
+            <img src={fiverrProfile.src} alt="Fiverr Profile" />
           </div>
         </div>
         <div className="flex flex-col items-center border rounded-lg p-4 mt-8">
             <h1 className="text-3xl font-bold text-center text-orange-600 my-4">Web Development Gig on <span className="bg-yellow-100 px-2 rounded">Fiverr</span></h1>
-            <img src={fiverrGigImage} alt=" Web Development Gig on Fiverr" className="md:w-7/12 mt-10"/>
+            <img src={fiverrGigImage.src} alt=" Web Development Gig on Fiverr" className="md:w-7/12 mt-10"/>
         </div>
       </section>
 

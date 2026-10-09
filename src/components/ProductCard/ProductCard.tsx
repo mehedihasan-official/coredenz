@@ -2,8 +2,14 @@ import { FaStar, FaRegHeart, FaHeart, FaShoppingCart } from "react-icons/fa";
 import { useState } from "react";
 import Link from 'next/link';
 import AddToCart from "../AddToCart/AddToCart";
+import type { Product } from '@/src/types/catalog';
 
-const ProductCard = ({ product }) => {
+interface ProductCardProps {
+  product: Product;
+  viewMode?: 'grid' | 'list';
+}
+
+const ProductCard = ({ product }: ProductCardProps) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
 
 

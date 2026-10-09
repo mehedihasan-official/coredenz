@@ -2,6 +2,15 @@ import React from 'react';
 import * as FaIcons from 'react-icons/fa';
 import * as MdIcons from 'react-icons/md';
 import { FaCheckCircle } from 'react-icons/fa';
+import type { Service } from '../../types/catalog';
+
+interface ServicesProps {
+  categories?: string[];
+  activeCategory: string;
+  setActiveCategory: (category: string) => void;
+  filteredServices: Service[];
+  filteredServicesCategory?: Service[];
+}
 
 const iconMap = {
   ...FaIcons,
@@ -39,7 +48,7 @@ const Services = ({
   activeCategory,
   setActiveCategory,
   filteredServices = [],
-}) => {
+}: ServicesProps) => {
   return (
     <div className="max-w-7xl mx-auto rounded">
       {/* Category Buttons */}
@@ -62,7 +71,7 @@ const Services = ({
       {/* Services Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {filteredServices.map((s, i) => {
-          const Icon = iconMap[s.icon];
+          const Icon = iconMap[s.icon as keyof typeof iconMap];
           const gradientStyle = getGradientStyle(s.color);
 
           return (
@@ -95,7 +104,7 @@ const Services = ({
 
                 {/* Features */}
                 <div className="space-y-2">
-                  {s.features.map((f, j) => (
+                  {s.features!.map((f, j) => (
                     <div
                       key={j}
                       className="flex items-center text-sm text-gray-700"

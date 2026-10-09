@@ -1,7 +1,8 @@
 import ProductContent from './product-content';
 import { getProduct } from '@/src/lib/catalog';
+import type { Availability } from '@/src/types/catalog';
 
-function isProductAvailable(availability) {
+function isProductAvailable(availability: Availability): boolean {
   return (
     availability === true ||
     (typeof availability === 'number' && availability > 0) ||
@@ -11,7 +12,11 @@ function isProductAvailable(availability) {
   );
 }
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const product = await getProduct(id);
 
@@ -41,7 +46,11 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function ProductPage({ params }) {
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const product = await getProduct(id);
 

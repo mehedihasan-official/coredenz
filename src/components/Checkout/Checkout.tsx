@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FaLock, FaArrowLeft } from 'react-icons/fa';
 import { HiOutlineLocationMarker } from 'react-icons/hi';
 import { BsCheckCircleFill } from 'react-icons/bs';
-import { AuthContext } from '../../provider/AuthProvider/AuthProvider';
+import { useAuth } from '../../provider/AuthProvider/AuthProvider';
 import PaymentMethod from '../PaymentMethod/PaymentMethod';
 import Swal from 'sweetalert2';
+import type { CartProduct } from '@/src/types/catalog';
 import {
   ShoppingBag,
   MapPin,
@@ -26,11 +27,29 @@ import {
   Lock,
 } from 'lucide-react';
 
+interface CheckoutState {
+  cartProducts: CartProduct[];
+  subtotal: number;
+  shippingFee: number;
+  total: number;
+}
+
+interface ShippingInfo {
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string;
+  email: string;
+}
+
 const Checkout = () => {
-  const { user, placeOrder } = useContext(AuthContext);
+  const { user, placeOrder } = useAuth();
   const [transactionId, setTransactionId] = useState('');
   const router = useRouter();
-  const [checkout, setCheckout] = useState({
+  const [checkout, setCheckout] = useState<CheckoutState>({
     cartProducts: [],
     subtotal: 0,
     shippingFee: 0,
@@ -52,7 +71,7 @@ const Checkout = () => {
 
   const { cartProducts, subtotal, shippingFee, total } = checkout;
 
-  const [shippingInfo, setShippingInfo] = useState({
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: '',
     lastName: '',
     address: '',
@@ -68,16 +87,18 @@ const Checkout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    setShippingInfo(prev => ({ ...prev, [name]: value }));
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.currentTarget;
+    setShippingInfo((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmitOrder = async e => {
+  const handleSubmitOrder = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setIsProcessing(true);
 
-    const requiredFields = [
+    const requiredFields: (keyof ShippingInfo)[] = [
       'firstName',
       'lastName',
       'address',
@@ -108,7 +129,7 @@ const Checkout = () => {
 
     const orderData = {
       userEmail: user?.email,
-      products: cartProducts.map(item => ({
+      products: cartProducts.map((item) => ({
         productId: item.productId,
         name: item.productDetails?.name,
         image: item.productDetails?.image,
@@ -127,7 +148,7 @@ const Checkout = () => {
     };
 
     try {
-      const res = await placeOrder(orderData);
+      const res = (await placeOrder(orderData)) as Record<string, unknown>;
 
       if (res.insertedId || res.success) {
         Swal.fire({
@@ -204,7 +225,7 @@ const Checkout = () => {
                   Order Summary
                 </h2>
                 <div className="space-y-4">
-                  {cartProducts.map(item => (
+                  {cartProducts.map((item) => (
                     <div
                       key={item._id}
                       className="flex justify-between items-center p-4 bg-gray-50 rounded-xl"
@@ -564,7 +585,7 @@ const Checkout = () => {
                 </label>
                 <textarea
                   id="orderNotes"
-                  rows="4"
+                  rows={4}
                   value={orderNotes}
                   onChange={e => setOrderNotes(e.target.value)}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#00B4D8] focus:outline-none transition-colors resize-none"

@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { useRouter, useParams } from 'next/navigation';
 import { FiArrowLeft, FiShoppingCart, FiStar } from "react-icons/fi";
 import PropTypes from "prop-types";
-import { AuthContext } from "../../provider/AuthProvider/AuthProvider";
+import { useAuth } from "../../provider/AuthProvider/AuthProvider";
 import AddToCart from "../AddToCart/AddToCart";
 
 const SingleProductPage = () => {
-  const { products } = useContext(AuthContext);
+  const { products } = useAuth();
   const { id: paramId } = useParams();
   const router = useRouter();
 
